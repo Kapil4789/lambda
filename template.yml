@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  DeploymentBucket:
+    Type: String
+    Description: S3 bucket containing the deployment package
+    
+  DeploymentKey:
+    Type: String
+    Description: S3 key (path) to the deployment package
+    
+  FunctionName:
+    Type: String
+    Default: my-lambda-function
+    
+  Runtime:
+    Type: String
+    Default: python3.9
+    
+  Handler:
+    Type: String
+    Default: app.lambda_handler
+
+Resources:
+  LambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Runtime: !Ref Runtime
+      Handler: !Ref Handler
+      CodeUri:
+        Bucket: !Ref DeploymentBucket
+        Key: !Ref DeploymentKey
+      Environment:
+        Variables:
+          STAGE: !Ref AWS::StackName
+          
+  LambdaAlias:
+    Type: AWS::Lambda::Alias
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      FunctionVersion: !GetAtt LambdaFunction.Version
+      Name: live
+
+Outputs:
+  FunctionArn:
+    Value: !GetAtt LambdaFunction.Arn
+  AliasArn:
+    Value: !Ref LambdaAlias
